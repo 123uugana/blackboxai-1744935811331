@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bluetooth Lamp Controller</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💡</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3b82f6',
+            secondary: '#64748b'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <!-- Global Status Indicator -->
+  <div id="globalStatus" class="fixed bottom-4 right-4 p-3 rounded-lg bg-white shadow-lg hidden">
+    <div class="flex items-center">
+      <i class="fas fa-circle text-gray-400 mr-2 pulse"></i>
+      <span class="text-sm">Ready to connect</span>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8 text-center">
+    <div class="bg-white rounded-lg shadow-lg p-8 max-w-2xl mx-auto">
+      <i class="fas fa-lightbulb text-6xl text-yellow-400 mb-6"></i>
+      <h1 class="text-4xl font-extrabold text-blue-600 mb-4">Smart Lamp Controller</h1>
+      <p class="text-gray-600 mb-8">Connect and control your Bluetooth-enabled smart lamp</p>
+      
+      <div class="space-y-4">
+        <button id="connectBtn" onclick="connectDevice()" 
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 flex items-center mx-auto">
+          <i class="fas fa-bluetooth-b mr-2"></i> Connect Device
+        </button>
+        
+        <div class="flex justify-center items-center text-sm text-gray-500">
+          <i class="fas fa-info-circle mr-2"></i>
+          <span>Last connected: <span id="lastConnected">Never</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Load Tailwind CSS if not already loaded
+    if (!document.querySelector('script[src*="tailwindcss.com"]')) {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.tailwindcss.com';
+      document.head.appendChild(script);
+    }
+
+    // Async connection handler
+    async function connectDevice() {
+      const btn = document.getElementById('connectBtn');
+      const status = document.getElementById('globalStatus');
+      
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Scanning...';
+      btn.classList.add('opacity-75', 'cursor-not-allowed');
+      
+      status.classList.remove('hidden');
+      status.innerHTML = `
+        <div class="flex items-center">
+          <i class="fas fa-circle text-blue-500 mr-2 pulse"></i>
+          <span class="text-sm">Searching for devices...</span>
+        </div>
+      `;
+      
+      try {
+        // Real Bluetooth device discovery
+        if (navigator.bluetooth) {
+          const device = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true,
+            optionalServices: ['battery_service'] // Change to your specific service
+          });
+          selectDevice(device.id);
+          return;
+        }
+
+        // Fallback to simulation
+        const devices = [
+          { name: 'Living Room Lamp', id: '00:1A:7D:DA:71:13' },
+          { name: 'Bedside Lamp', id: '00:1A:7D:DA:71:14' },
+          { name: 'Patio Lights', id: '00:1A:7D:DA:71:15' }
+        ];
+        
+        // Show device selection
+        status.innerHTML = `
+          <div class="bg-white p-3 rounded-lg shadow">
+            <h3 class="font-bold mb-2">Available Devices</h3>
+            ${devices.map(device => `
+              <div class="p-2 hover:bg-gray-100 rounded cursor-pointer" 
+                   onclick="selectDevice('${device.id}')">
+                <i class="fas fa-lightbulb text-yellow-400 mr-2"></i>
+                ${device.name}
+              </div>
+            `).join('')}
+          </div>
+        `;
+        
+      } catch (error) {
+        status.innerHTML = `
+          <div class="flex items-center">
+            <i class="fas fa-times-circle text-red-500 mr-2"></i>
+            <span class="text-sm">Connection failed</span>
+          </div>
+        `;
+        btn.innerHTML = '<i class="fas fa-bluetooth-b mr-2"></i> Try Again';
+        btn.classList.remove('opacity-75', 'cursor-not-allowed');
+      }
+    }
+
+    function selectDevice(deviceId) {
+      const status = document.getElementById('globalStatus');
+      status.innerHTML = `
+        <div class="flex items-center">
+          <i class="fas fa-circle text-blue-500 mr-2 pulse"></i>
+          <span class="text-sm">Connecting to device...</span>
+        </div>
+      `;
+
+      setTimeout(() => {
+        localStorage.setItem('lastConnected', new Date().toLocaleString());
+        localStorage.setItem('deviceId', deviceId);
+        window.location.href = 'control.html';
+      }, 1500);
+    }
+
+    // Load last connection time
+    document.addEventListener('DOMContentLoaded', () => {
+      const lastConnected = localStorage.getItem('lastConnected');
+      if (lastConnected) {
+        document.getElementById('lastConnected').textContent = lastConnected;
+      }
+    });
+  </script>
+
+  <style>
+    /* Pulse animation for connection status */
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    /* Loading spinner */
+    .fa-spinner {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</body>
+</html>
