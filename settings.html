@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Device Settings</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💡</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3b82f6',
+            secondary: '#64748b'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-gray-200 min-h-screen">
+  <!-- Global Status Indicator -->
+  <div id="globalStatus" class="fixed bottom-4 right-4 p-3 rounded-lg bg-white shadow-lg hidden">
+    <div class="flex items-center">
+      <i class="fas fa-circle text-gray-400 mr-2"></i>
+      <span class="text-sm">Settings saved</span>
+    </div>
+  </div>
+
+  <nav class="bg-blue-600 p-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center">
+      <a href="control.html" class="text-white hover:text-blue-200 transition">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+      <h1 class="text-white text-xl font-bold">Settings</h1>
+      <div class="w-6"></div>
+    </div>
+  </nav>
+
+  <div class="max-w-md mx-auto p-8 bg-white mt-8 rounded-lg shadow-lg">
+    <div class="mb-8">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">Connection</h2>
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <i class="fas fa-bluetooth-b text-blue-500 mr-2"></i>
+            <span class="text-gray-700">Auto-connect</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="autoConnect" class="sr-only peer" checked>
+            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+        <div class="bg-gray-100 p-3 rounded-lg">
+          <p class="text-sm text-gray-700">
+            <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+            Current Device: <span class="font-mono">${localStorage.getItem('deviceId') || 'Not connected'}</span>
+          </p>
+          <button onclick="forgetDevice()" class="mt-2 text-xs text-red-500 hover:text-red-700">
+            <i class="fas fa-trash-alt mr-1"></i> Forget this device
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function forgetDevice() {
+        if (confirm('Are you sure you want to forget this device?')) {
+          localStorage.removeItem('deviceId');
+          window.location.reload();
+        }
+      }
+    </script>
+
+    <div class="mb-8">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">Device Information</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-gray-700 mb-1">Device Name</label>
+          <input type="text" id="deviceName" 
+                 class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                 placeholder="My Smart Lamp">
+        </div>
+        <div>
+          <label class="block text-gray-700 mb-1">Firmware Version</label>
+          <input type="text" readonly 
+                 class="w-full px-3 py-2 bg-gray-100 rounded-lg" 
+                 value="v1.2.5">
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-8">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">Advanced</h2>
+      <button onclick="resetDefaults()" 
+              class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded transition">
+        <i class="fas fa-undo mr-2"></i> Reset to Defaults
+      </button>
+    </div>
+
+    <div class="text-center">
+      <button onclick="saveSettings()" 
+              class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition">
+        <i class="fas fa-save mr-2"></i> Save Settings
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Load saved settings when page loads
+    window.addEventListener('load', () => {
+      const savedSettings = JSON.parse(localStorage.getItem('lampSettings')) || {};
+      document.getElementById('autoConnect').checked = savedSettings.autoConnect !== false;
+      document.getElementById('deviceName').value = savedSettings.deviceName || '';
+    });
+
+    function saveSettings() {
+      const settings = {
+        autoConnect: document.getElementById('autoConnect').checked,
+        deviceName: document.getElementById('deviceName').value
+      };
+      localStorage.setItem('lampSettings', JSON.stringify(settings));
+      
+      // Show success message
+      const status = document.getElementById('globalStatus');
+      status.classList.remove('hidden');
+      status.innerHTML = `
+        <div class="flex items-center">
+          <i class="fas fa-check-circle text-green-500 mr-2"></i>
+          <span class="text-sm">Settings saved successfully</span>
+        </div>
+      `;
+      
+      setTimeout(() => {
+        status.classList.add('hidden');
+      }, 3000);
+    }
+
+    function resetDefaults() {
+      const status = document.getElementById('globalStatus');
+      
+      if (confirm('Are you sure you want to reset all settings to default?')) {
+        localStorage.removeItem('lampSettings');
+        document.getElementById('autoConnect').checked = true;
+        document.getElementById('deviceName').value = '';
+        
+        status.classList.remove('hidden');
+        status.innerHTML = `
+          <div class="flex items-center">
+            <i class="fas fa-check-circle text-green-500 mr-2"></i>
+            <span class="text-sm">Settings reset to defaults</span>
+          </div>
+        `;
+        
+        setTimeout(() => {
+          status.classList.add('hidden');
+        }, 3000);
+      }
+    }
+  </script>
+</body>
+</html>
